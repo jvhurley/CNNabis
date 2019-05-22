@@ -182,11 +182,13 @@ if __name__ == "__main__":
 	anns_passed = []
 	anns_to_modify = []
 	images_to_review = []
+	processed_images = []
 
 	# take the annotation file name and create three filenames: annotations that passed QA, annotations that need more
 	# review, and a list of images that needs to be reviewed.
 	ann_parts = os.path.splitext(annotation_file)[0]
 	images_to_review_path = ann_parts + '_images_for_review.txt'
+	processed_images_path = ann_parts + '_processed_images.txt'
 	QA_passed = ann_parts + '_QA_passed.json'
 	QA_needs_review = ann_parts + '_QA_to_modify.json'
 
@@ -225,6 +227,14 @@ if __name__ == "__main__":
 	else:
 		with open(images_to_review_path, 'w') as open_file:
 			open_file.write('')
+	# check exists or open file and save image names to processed images
+	if os.path.exists(processed_images_path):
+		with open(processed_images_path)as process_images:
+			for line in process_images:
+				processed_images.extend([line.strip()])
+	else:
+		with open(processed_images_path, 'w') as open_file:
+			open_file.write('')
 
 	# call the read_ann_file definition. The cats_dict and the images_dict will be used to create new annotation
 	# files. The images and cats_by_id will be used to collect and call information.
@@ -242,10 +252,10 @@ if __name__ == "__main__":
 			continue
 		if file =='delete.JPEG':
 			continue
-		# check if this file is in the review list already
-		if file in images_to_review:
+		# check if this file is in the processed list already
+		if file in processed_images:
 			# continue once the loop is back in place
-			pass
+			continue
 		img_H, img_W = images[file]['height'], images[file]['width']
 		img_path = os.path.join(images_dir, file)
 		image = cv2.imread(img_path)
@@ -324,6 +334,7 @@ if __name__ == "__main__":
 					anns_to_modify.append(ann_reviewed)
 			elif switch == None:
 				continue
+		processed_images.append(fileQQ)
 		#cv2.destroyWindow('Image')
 		# text = 'Is this image completely annotated? (y/n)'
 		# cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0,0), 9)
@@ -361,5 +372,8 @@ if __name__ == "__main__":
 			W.write(str(data_to_review).replace('\'', '\"').replace(' ', ''))
 		with open(images_to_review_path, 'w') as W:
 			for item in images_to_review:
+				W.write(f'{item}\n')
+		with open(processed_images_path, 'w') as W:
+			for item in processed_images:
 				W.write(f'{item}\n')
 
