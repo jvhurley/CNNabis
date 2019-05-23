@@ -104,12 +104,13 @@ def CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file
 	# remove.
 	switch=None
 	cv2.imshow(named_window, image_in)
+	#cv2.moveWindow(named_window, 0,0)
 	k = cv2.waitKey(0)
 
 	# break out of all QA processes
 	if k == ord('Q'):
 		# leave the broken line broken. it gets us out of the loop till we find a better way.
-		cv2.destroysWindow(named_window)
+		cv2.destroyAllWindows(named_window)
 
 	# if the annotation is too bad to fix, write FAIL to verified
 	elif k == ord("X"):
@@ -150,7 +151,7 @@ def CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file
 		# append ann to good list
 		cv2.destroyWindow(named_window)
 	else:
-		CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file_name, named_window="Image")
+		CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file_name, named_window)
 	return annotation, switch
 
 
@@ -267,16 +268,73 @@ if __name__ == "__main__":
 		# cp_image
 		cp_whole_image = image.copy()
 		all_anns = [ann['segmentation'][0] for ann in images[file]['annotations'].values()]
+
 		# display the whole image with all of its annotations. If there is missing annotations the whole image and
 		# all of its annotations will be sent for review
 		cv2.polylines(cp_whole_image, [np.array(ann, np.int32).reshape((-1, 1, 2)) for ann in all_anns],
 		              True, (0, 0, 255), thickness=2)
+		# text = 'Review to see if we captured all of the target categories'
+		# cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
+		# cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+		cv2.imshow("Whole_Image", cp_whole_image)
+		cv2.moveWindow("Whole_Image", 650, 0)
+
+		for count,ann_instance in enumerate(images[file]['annotations'].values()):
+			# get the annotation class
+			ann_instance_class = cats_by_id[ann_instance['category_id']]
+			class_label = f"{ann_instance_class}"
+
+			# show instructions on separate window.
+			instructions_img = np.zeros(shape=(350, 650, 3)).astype('uint8')
+			QA_text = f'class: {class_label}\nQ: quit\nX: delete annotation\np: send to review for polygon change\nc: change ' \
+				f'category and ' \
+				f'advance\ns: save annotation and advance\nfile: {file}'
+			y0, dy = 50, 40
+			for i, line in enumerate(QA_text.split('\n')):
+				y = y0 + i * dy
+				cv2.putText(instructions_img, line, (15, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
+				cv2.putText(instructions_img, line, (15, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+			cv2.imshow("instructions", instructions_img)
+			cv2.moveWindow("instructions", 0, 700)
+
+			cp_image, reproj_seg = natural_bounds_and_padded(image, ann_instance, img_H, img_W, padding=100, scale=600)
+			text_location = reproj_seg[0][0].copy()
+			try:
+				text_location[1] = text_location[1] + 100
+				text_location[0] = text_location[0] - 150
+				text_location = tuple(text_location)
+			except:
+				text_location = tuple(5,25)
+			# image display details
+			cv2.polylines(cp_image, [reproj_seg], True, (0, 0, 255), thickness=1)
+			cv2.putText(cp_image, class_label, text_location, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
+			cv2.putText(cp_image, class_label, text_location, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+			ann_reviewed, switch = CV2_wait_annotation(cp_image, cats_by_id, ann_instance, images_to_review, file,
+			                                           named_window="Annotation_review")
+			cv2.destroyWindow("instructions")
+			# append ann_reviewed using switch to determine correct dictionary
+			if switch == 0:
+				anns_passed.append(ann_reviewed)
+			elif switch == 1:
+				if ann_reviewed not in anns_to_modify:
+					anns_to_modify.append(ann_reviewed)
+			elif switch == None:
+				continue
+		# display the whole image with all of its annotations. If there is missing annotations the whole image and
+		# all of its annotations will be sent for review
+		# cv2.polylines(cp_whole_image, [np.array(ann, np.int32).reshape((-1, 1, 2)) for ann in all_anns],
+		#               True, (0, 0, 255), thickness=2)
 		text = 'Did we capture all of the target categories? (y/n)'
 		cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
 		cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 		cv2.imshow("Whole_Image", cp_whole_image)
+		#cv2.moveWindow("Whole_Image", 0, 0)
 		k = cv2.waitKey(0)
 		while True:
+			# break out of all QA processes
+			if k == ord('Q'):
+				# leave the broken line broken. it gets us out of the loop till we find a better way.
+				cv2.destroyAllWindows()
 			# ask if there are any segmentations that are not annotated?
 			if k == ord("y"):
 				break
@@ -285,9 +343,9 @@ if __name__ == "__main__":
 					images_to_review.append(file)
 				# pass all annotations to the review process so that user can see what is missing
 				for count, ann_instance in enumerate(images[file]['annotations'].values()):
-					if any([seg['segmentation'] == ann_instance['segmentation'] for seg in anns_to_modify] ):
-							continue
-					#if any ann_instance['segmentation'] == anns_to_modify
+					if any([seg['segmentation'] == ann_instance['segmentation'] for seg in anns_to_modify]):
+						continue
+					# if any ann_instance['segmentation'] == anns_to_modify
 					else:
 						if ann_instance not in anns_to_modify:
 							anns_to_modify.append(ann_instance)
@@ -297,47 +355,6 @@ if __name__ == "__main__":
 				break
 			else:
 				k = cv2.waitKey(0)
-
-		# show whole image with instructions overlain.
-		cp_whole_image = image.copy()
-		QA_text = f'Q: quit\nX: delete annotation\np: send to review for polygon change\nc: change category and ' \
-		          f'advance\ns: save annotation and advance\nfile: {file}'
-		y0, dy = 50, 40
-		for i, line in enumerate(QA_text.split('\n')):
-			y = y0 + i * dy
-			cv2.putText(cp_whole_image, line, (15, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-			cv2.putText(cp_whole_image, line, (15, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-		cv2.polylines(cp_whole_image, [np.array(ann, np.int32).reshape((-1, 1, 2)) for ann in all_anns],
-		              True, (0, 0, 255), thickness=2)
-
-		for count,ann_instance in enumerate(images[file]['annotations'].values()):
-			# get the annotation class
-			ann_instance_class = cats_by_id[ann_instance['category_id']]
-			class_label = f"{ann_instance_class}"
-
-			cp_image, reproj_seg = natural_bounds_and_padded(image, ann_instance, img_H, img_W, padding=100, scale=600)
-			text_location = reproj_seg[0][0].copy()
-			try:
-				text_location[1] = text_location[1] + 50
-				text_location[0] = text_location[0] - 150
-				text_location = tuple(text_location)
-			except:
-				text_location = tuple(5,25)
-			# image display details
-			cv2.polylines(cp_image, [reproj_seg], True, (0, 0, 255), thickness=1)
-			cv2.putText(cp_image, class_label, text_location, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
-			cv2.putText(cp_image, class_label, text_location, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-			cv2.imshow("Whole_Image", cp_whole_image)
-			ann_reviewed, switch = CV2_wait_annotation(cp_image, cats_by_id, ann_instance, images_to_review, file,
-			                                           named_window="Image")
-			# append ann_reviewed using switch to determine correct dictionary
-			if switch == 0:
-				anns_passed.append(ann_reviewed)
-			elif switch == 1:
-				if ann_reviewed not in anns_to_modify:
-					anns_to_modify.append(ann_reviewed)
-			elif switch == None:
-				continue
 		processed_images.append(file)
 		#cv2.destroyWindow('Image')
 		# text = 'Is this image completely annotated? (y/n)'
