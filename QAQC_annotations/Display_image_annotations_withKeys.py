@@ -280,6 +280,16 @@ if __name__ == "__main__":
 		cv2.moveWindow("Whole_Image", 650, 0)
 
 		for count,ann_instance in enumerate(images[file]['annotations'].values()):
+			# check to see if it has a timestamp in the verified attribute and skip it is if does, otherwise continue
+			# with annotation review.
+			if 'verified' in ann_instance:
+				QA_check = ann_instance['verified']
+				try:
+					datetime.strptime(QA_check, "%Y-%m-%d_%H:%M:%S")
+					continue
+				except:
+					pass
+
 			# get the annotation class
 			ann_instance_class = cats_by_id[ann_instance['category_id']]
 			class_label = f"{ann_instance_class}"
