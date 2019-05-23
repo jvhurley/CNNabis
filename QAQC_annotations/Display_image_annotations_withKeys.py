@@ -8,6 +8,7 @@ import argparse
 from datetime import datetime
 import pymsgbox
 import copy
+from shutil import copyfile
 
 
 
@@ -191,6 +192,7 @@ if __name__ == "__main__":
 	processed_images_path = ann_parts + '_processed_images.txt'
 	QA_passed = ann_parts + '_QA_passed.json'
 	QA_needs_review = ann_parts + '_QA_to_modify.json'
+	images_for_review_location = ann_parts
 
 	# check to see if these files exist and if they do read in their information, if they do not, create them
 	# check if exists, read in values and append to
@@ -229,13 +231,15 @@ if __name__ == "__main__":
 			open_file.write('')
 	# check exists or open file and save image names to processed images
 	if os.path.exists(processed_images_path):
-		with open(processed_images_path)as process_images:
+		with open(processed_images_path) as process_images:
 			for line in process_images:
 				processed_images.extend([line.strip()])
 	else:
 		with open(processed_images_path, 'w') as open_file:
 			open_file.write('')
-
+	# check if images for review folder exists
+	if not os.path.exists(images_for_review_location):
+		os.mkdir(images_for_review_location)
 	# call the read_ann_file definition. The cats_dict and the images_dict will be used to create new annotation
 	# files. The images and cats_by_id will be used to collect and call information.
 	images, cats_by_id, cats_dict, images_dict = read_ann_file(annotation_file)
@@ -267,7 +271,7 @@ if __name__ == "__main__":
 		# all of its annotations will be sent for review
 		cv2.polylines(cp_whole_image, [np.array(ann, np.int32).reshape((-1, 1, 2)) for ann in all_anns],
 		              True, (0, 0, 255), thickness=2)
-		text = 'Is this image completely annotated? (y/n)'
+		text = 'Did we capture all of the target categories? (y/n)'
 		cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
 		cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 		cv2.imshow("Whole_Image", cp_whole_image)
@@ -296,8 +300,8 @@ if __name__ == "__main__":
 
 		# show whole image with instructions overlain.
 		cp_whole_image = image.copy()
-		QA_text = 'Q: quit\nX: delete annotation\np: send to review for polygon change\nc: change category and ' \
-		          'save\ns: save\n'
+		QA_text = f'Q: quit\nX: delete annotation\np: send to review for polygon change\nc: change category and ' \
+		          f'advance\ns: save annotation and advance\nfile: {file}'
 		y0, dy = 50, 40
 		for i, line in enumerate(QA_text.split('\n')):
 			y = y0 + i * dy
@@ -334,7 +338,7 @@ if __name__ == "__main__":
 					anns_to_modify.append(ann_reviewed)
 			elif switch == None:
 				continue
-		processed_images.append(fileQQ)
+		processed_images.append(file)
 		#cv2.destroyWindow('Image')
 		# text = 'Is this image completely annotated? (y/n)'
 		# cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0,0), 9)
@@ -373,6 +377,8 @@ if __name__ == "__main__":
 		with open(images_to_review_path, 'w') as W:
 			for item in images_to_review:
 				W.write(f'{item}\n')
+		for item in images_to_review:
+			copyfile(os.path.join(images_dir, item), os.path.join(images_for_review_location, item))
 		with open(processed_images_path, 'w') as W:
 			for item in processed_images:
 				W.write(f'{item}\n')
