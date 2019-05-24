@@ -119,33 +119,14 @@ def natural_bounds_and_padded(numpy_image, annotation_instance, img_H, img_W, pa
 	# object. this will be resized to 600 in both the vertical and horizontal axes. This operation will not
 	# preserve the image relation and may skew the image. 
 	x, y, w, h = [int(a) for a in annotation_instance['bbox']]
-	if x > padding:
-		padded_x = (x - padding)
-		x_offset = 0
-	else:
-		padded_x = 0
-		x_offset = x - padding
-	if y > padding:
-		padded_y = (y - padding)
-		y_offset = 0
-	else:
-		padded_y = 0
-		y_offset = y - padding
-	if (x + w + (padding * 2)) < img_W:
-		padded_w = w + (padding * 2)
-		w_offset = 0
-	else:
-		padded_w = img_W
-		w_offset = img_W - (x + w + (padding * 2))
-	if (y + h + (padding * 2)) < img_H:
-		padded_h = h + (padding * 2)
-		h_offset = 0
-	else:
-		padded_h = img_H
-		h_offset = img_H - (y + h + (padding * 2))
+
+	padded_x = (x - padding) if x > padding else 0
+	padded_y = (y - padding) if y > padding else 0
+	padded_w = x + w + (padding * 2) if (x + w + (padding * 2)) < img_W else img_W
+	padded_h = y + h + (padding * 2) if (y + h + (padding * 2)) < img_H else img_H
 
 	# use the padding to select ROI
-	cp_image = numpy_image[padded_y:(padded_y + padded_h), padded_x:(padded_x + padded_w)]
+	cp_image = numpy_image[padded_y:padded_h, padded_x: padded_w]
 	# get scaling ratios
 	cp_image_h_ratio, cp_image_w_ratio, _ = [scale / x for x in cp_image.shape]
 	# resize image
@@ -180,7 +161,7 @@ def CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file
 
 	# if the annotation is too bad to fix, write FAIL to verified
 	elif k == ord("X"):
-		annotation['verified'] = 'FAIL'
+		annotation['verified'] = 'deleted'
 		switch = None
 		cv2.destroyWindow(named_window)
 
@@ -435,13 +416,30 @@ if __name__ == "__main__":
 		data_passed['annotations'] = anns_passed
 		data_to_review['annotations'] = anns_to_modify
 
-		with open(QA_passed, 'w') as W:
-			W.write(str(data_passed).replace('\'', '\"').replace(' ', ''))
-		with open(QA_needs_review, 'w') as W:
-			W.write(str(data_to_review).replace('\'', '\"').replace(' ', ''))
-		for item in images_to_review:
-			copyfile(os.path.join(images_dir, item), os.path.join(images_for_review_location, item))
-		with open(processed_images_path, 'w') as W:
-			for item in processed_images:
-				W.write(f'{item}\n')
-
+		# we have to be careful here as a code break here could erase our data.
+		tmp1 = ann_parts + '.tmp1'
+		tmp2 = ann_parts + '.tmp2'
+		tmp3 = ann_parts + '.tmp3'
+		sucess = ''
+		try:
+			with open(tmp1, 'w') as W:
+				W.write(str(data_passed).replace('\'', '\"').replace(' ', ''))
+			with open(tmp2, 'w') as W:
+				W.write(str(data_to_review).replace('\'', '\"').replace(' ', ''))
+			with open(tmp3, 'w') as W:
+				for item in processed_images:
+					W.write(f'{item}\n')
+			success = 1
+		except:
+			# don't overwrite the work we've done thus far
+			break
+		if success == 1:
+			copyfile(tmp1, QA_passed)
+			copyfile(tmp2, QA_needs_review)
+			copyfile(tmp3, processed_images_path)
+			# copy over the files we've completed this session.
+			for item in images_to_review:
+				copyfile(os.path.join(images_dir, item), os.path.join(images_for_review_location, item))
+			os.remove(tmp1)
+			os.remove(tmp2)
+			os.remove(tmp3)
