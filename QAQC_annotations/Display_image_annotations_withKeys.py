@@ -1,7 +1,7 @@
 '''
 
 Author:
-	Andrew Dix Hill; https://github.com/AndrewDixHill/CNNabis/QAQC_annotations ; andrew.hill@waterboards.ca.gov
+	Andrew Dix Hill; https://github.com/AndrewDHill/CNNabis/QAQC_annotations ; andrew.hill@waterboards.ca.gov
 
 Agency:
 	California State Water Resource Control Board (SWRCB)
