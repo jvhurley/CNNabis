@@ -16,7 +16,6 @@ How to use this script:
 		/annotations/SR_16_thru_30.json -i=/media/robot/Storage/images/NAIP_Imagery/2016_StateRegionalNAIP_examples
 	the -a flag should specify the location and name of the annotation file
 	the -i flag should specify the folder that immediately holds all of the images in your annotation file
-	the -a argument will determine the name of the outputs
 
 Prerequisites:
 	Anaconda built with python 3 ; or python 3
@@ -248,7 +247,7 @@ if __name__ == "__main__":
 
 	# call the read_ann_file definition. This creates a dictionary of image name keys that return a dictionary of
 	# atributes: file_name, height, width, id, and all of the associated annotations, If these annotations have not
-	# been throught he QA process yet, they should not have a verified key.
+	# been through the QA process yet, they should not have a verified key.
 	# images  -----------  used to loop over each image. It also holds all of the annotations for each image.
 	# cats_by_id  ------- used to convert numeric category ids to strings
 	#
@@ -294,11 +293,13 @@ if __name__ == "__main__":
 		cv2.moveWindow("Whole_Image", 650, 0)
 
 		# loop over each annotation for an image
+		# Create a variable to track ho wmany annotations need review
+		annotation_number_needing_review = 0
 		for count,ann_instance in enumerate(images[file]['annotations'].values()):
 			# if the verified key exists in an annotation, it has been through this QA process at least once.
 			# check to see if it has a timestamp in the verified attribute and skip it is if does, otherwise continue
 			# with annotation review. Converting to a time stamp and throwing an error to check if it matches a
-			# pattern is probably not the most efficient way to do this!
+			# pattern... is probably not the most efficient way to do this!
 			if 'verified' in ann_instance:
 				QA_check = ann_instance['verified']
 				try:
@@ -356,8 +357,20 @@ if __name__ == "__main__":
 			elif switch == 1:
 				if ann_reviewed not in anns_to_modify:
 					anns_to_modify.append(ann_reviewed)
+				annotation_number_needing_review += 1
+				# we need to include all of the annotations
 			elif switch == None:
 				continue
+		# if annotation_number_needing_review is greater than 0 it means at least one annotation needs review and
+		# all annotations should be passed to the review process. We are doing this here because the "verified"
+		# values may not be present prior to this step.
+		if annotation_number_needing_review > 0:
+			# pass all annotations to the review process so that user can see what annotations have been done. It
+			# will require the annotator to take a close look at each polygon to determine if they need review.
+			# Hopefully I can find a way to color code polygons in ImgLab based on the "verified" value.
+			for count, ann_instance in enumerate(images[file]['annotations'].values()):
+				if ann_instance not in anns_to_modify:
+					anns_to_modify.append(ann_instance)
 
 		# display the whole image with all of its annotations. If there is missing annotations the whole image and
 		# all of its annotations will be sent for review.
@@ -383,7 +396,6 @@ if __name__ == "__main__":
 					cv2.destroyAllWindows()
 				# ask if all target categories are captured by annotations in an image?
 				if k == ord("y"):
-
 					break
 				elif k == ord("n"):
 					# we need to pass this image into the folder of images needed for review.
