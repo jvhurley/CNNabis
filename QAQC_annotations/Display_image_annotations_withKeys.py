@@ -432,7 +432,7 @@ if __name__ == "__main__":
 		tmp1 = ann_parts + '.tmp1'
 		tmp2 = ann_parts + '.tmp2'
 		tmp3 = ann_parts + '.tmp3'
-		sucess = ''
+		success = ''
 		try:
 			with open(tmp1, 'w') as W:
 				W.write(str(data_passed).replace('\'', '\"').replace(' ', ''))
