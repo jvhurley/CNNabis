@@ -384,9 +384,11 @@ if __name__ == "__main__":
 		if os.path.splitext(annotation_file)[0].endswith('QA_to_modify'):
 			pass
 		else:
-			text = 'Did we capture all of the target categories? (y/n)'
+			text = f'Did we capture all of the target categories? (y/n)'
 			cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
 			cv2.putText(cp_whole_image, text, (15, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+			cv2.putText(cp_whole_image, f'{file}', (15, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 9)
+			cv2.putText(cp_whole_image, f'{file}', (15, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 			cv2.imshow("Whole_Image", cp_whole_image)
 			#cv2.moveWindow("Whole_Image", 0, 0)
 			k = cv2.waitKey(0)

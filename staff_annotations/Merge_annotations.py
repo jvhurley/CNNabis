@@ -28,33 +28,8 @@ Prerequisites:
 		pymsgbox
 		opencv-python
 Outputs:
-	1. A json file with all of the annotations that passed the QA process named after the input annotation file with
-	"_QA_passed" appended to the end of the filename.
-	2. A json file with all of the annotations that DID NOT pass the QA process named after the input annotation file
-	with "_QA_to_modify" appended to the end of the filename.
-	3. A txt file with "_images_for_review" appended to the annotation filename. This may not be a necessary output.
-	4. A txt file with "_processed_images" appended to the annotation filename. This is used to keep track of the QA
-	review process through each annotation file. Do not modify this file unless you understand why this is important.
-	5. A folder of all of the images that will be used to manually adjust polygons or completely annotating an image.
 
 Next steps:
-	Once the first QA pass is completed on an input annotation file, a user should use an annotation program like
-	ImgLab and open the new annotation file ending with "_QA_to_modify.json". In ImgLab they should use the folder of
-	images named after the input annotation file and review each image and annotation for completely labeled images
-	or correctly annotated objects. Frequent problems are:
-		1. poorly segmented objects. polygons must follow boundaries of objects. This may mean that a user has to
-		zoom in fairly closely to correctly annotate an object. If you open an image and only see one or a few
-		annotations but there are quite a few unannotated objects, it is likely that only these annotations need
-		review. If you do annotated everything in the image, this will not disrupt the training process but it may
-		duplicate effort.
-		2. An image is missing all annotations of the target categories. If you open an image and see many
-		annotations, the review may be because there are missing objects that should be annotated. Please also review
-		each annotation for correct segmenation.
-
-	The QA process is an iterative process and should continue until the annotation file ending with
-	"_QA_to_modify.json" does not contains any annotations. At this point, all of the files ending with
-	"_QA_passed.json" should be merged into a single annotation file with the Merge_annotations.py tool located here:
-		https://github.com/AndrewDHill/CNNabis/tree/master/staff_annotations/Merge_annotations.py
 
 '''
 import os
