@@ -409,8 +409,10 @@ if __name__ == "__main__":
 							continue
 						# if any ann_instance['segmentation'] == anns_to_modify
 						else:
-							if ann_instance not in anns_to_modify:
+							if ann_instance not in anns_to_modify and ann_instance['verified'] != 'deleted':
 								anns_to_modify.append(ann_instance)
+							else:
+								continue
 					break
 				elif k == ord('Q'):
 					cv2.destroyAllWindows()
