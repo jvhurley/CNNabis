@@ -169,6 +169,12 @@ def CV2_wait_annotation(image_in, cats_by_id, annotation, images_to_review, file
 		annotation['verified'] = 'needs_review'
 		if file_name not in images_to_review:
 			images_to_review.append(file_name)
+		# if we alter the annotated polygon to be a bounding box, then it will be easier for a use to see which
+		# polygons need fixing. This probably isn't the best way but it seems like it could be a workaround until we
+		# can color code the polygons.
+		bbox = annotation['bbox']
+		#print(bbox)
+		annotation['segmentation'][0] = [bbox[0],bbox[1], bbox[0],bbox[3], bbox[2],bbox[3], bbox[2], bbox[1], ]
 		switch = 1
 		cv2.destroyWindow(named_window)
 
@@ -403,7 +409,8 @@ if __name__ == "__main__":
 					# we need to pass this image into the folder of images needed for review.
 					if file not in images_to_review:
 						images_to_review.append(file)
-					# pass all annotations to the review process so that user can see what is missing
+					# pass all annotations to the review process so that user can see what is missing unless they
+					# were deleted!
 					for count, ann_instance in enumerate(images[file]['annotations'].values()):
 						if any([seg['segmentation'] == ann_instance['segmentation'] for seg in anns_to_modify]):
 							continue
