@@ -272,6 +272,9 @@ if __name__ == "__main__":
 		if 'annotations' not in images[file]:
 			continue
 		if file =='delete.JPEG':
+			for count, ann_instance in enumerate(images[file]['annotations'].values()):
+				if ann_instance not in anns_to_modify:
+					anns_to_modify.append(ann_instance)
 			continue
 		# check if this file is in the processed list already
 		if file in processed_images:
