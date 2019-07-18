@@ -272,6 +272,11 @@ if __name__ == "__main__":
 		if 'annotations' not in images[file]:
 			continue
 		if file =='delete.JPEG':
+			for count, ann_instance in enumerate(images[file]['annotations'].values()):
+				ann_reviewed = ann_instance
+				ann_reviewed['verified'] = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+				anns_passed.append(ann_reviewed)
+				anns_to_modify.append(ann_reviewed)
 			continue
 		# check if this file is in the processed list already
 		if file in processed_images:
@@ -305,11 +310,12 @@ if __name__ == "__main__":
 			# if the verified key exists in an annotation, it has been through this QA process at least once.
 			# check to see if it has a timestamp in the verified attribute and skip it is if does, otherwise continue
 			# with annotation review. Converting to a time stamp and throwing an error to check if it matches a
-			# pattern... is probably not the most efficient way to do this!
+			# pattern... is probably not the most efficient way to do this or even good practice for that matter
 			if 'verified' in ann_instance:
 				QA_check = ann_instance['verified']
 				try:
 					datetime.strptime(QA_check, "%Y-%m-%d_%H:%M:%S")
+					anns_passed.append(ann_instance)
 					continue
 				except:
 					pass

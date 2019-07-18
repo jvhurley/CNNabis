@@ -74,12 +74,12 @@ def correct_file(file, images, cats, dict_image_segmentation_count):
 		# skip adding the template delete.JPEG annotations !!
 		# unless the user didn't use the template and
 		if review_img_name == 'delete.JPEG':
-			#print('\n\nskipping template delete.JPEG annotations')
-			#del data_for_review['annotations'][count]
-			skip_count += 1
-			# count -= 1
-			continue
-
+			pass
+		#	#print('\n\nskipping template delete.JPEG annotations')
+		#	#del data_for_review['annotations'][count]
+		#	skip_count += 1
+		#	# count -= 1
+		#	continue
 		# here we are trying to keep track of the annotations per image because they need unique ids!
 		# and make sure we aren't adding duplicate to the record
 		# seg is the segment instance already
@@ -102,7 +102,10 @@ def correct_file(file, images, cats, dict_image_segmentation_count):
 			print(f"{review_img_name} was not in original set!!!")
 			break
 		# get annotation number information
-		cat_number = cats_by_id_for_review[ann['category_id']]['name']
+		try:
+			cat_number = cats_by_id_for_review[ann['category_id']]['name']
+		except KeyError:
+			print(f"something is wrong with the category name: {ann}")
 		# get real category number
 		try:
 			real_cat_number = cats[cat_number]['id']
@@ -160,7 +163,7 @@ if __name__ == "__main__":
 	outFile = os.path.join(annotation_folder, f'Merged_annotations_{now}.json')
 
 	# get a list of all the json files in this location.
-	FLs = glob.glob('*.json')
+	FLs = sorted(glob.glob('*.json'))
 
 	# if main clause
 	annotations = []
