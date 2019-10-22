@@ -1,0 +1,5 @@
+The "BG_full_tifs_examples" folder contains a smash-grab selection of NAIP 2016 images that our model did really poorly on. By manually selecting regions of these images (of course you still have to annotate the full image in case it includes any of your targets categories) as background, we can get the computer to train with these and hopefully reduce our errors. 
+
+Use the NAIP_img_processing.py script to chop these images into smaller pieces and then send a seleection through the annotation process. If you do include more images for training, besure to add the actual 1024x1024 image to the Sifted_and_curated_examples folder or to your training folder.
+
+In case you made quite a few additions to the training corpus, use the copy_tifs.py script to take all of your jpg examples and copy the tifs over to a location of your choice.

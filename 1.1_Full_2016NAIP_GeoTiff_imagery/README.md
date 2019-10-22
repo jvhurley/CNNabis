@@ -1,0 +1,1 @@
+The 2016 NAIP imagery is around 6TB and we chose to store this data on an external drive.
